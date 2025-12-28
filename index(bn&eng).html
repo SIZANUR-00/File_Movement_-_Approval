@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>File Movement & Approval System</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ---------- Reset & base ---------- */
+    :root{
+      --accent:#282424;
+      --accent-2:#3f8fd5;
+      --muted:#243557;
+      --gold:#ffce00;
+      --green: #3cdd77bd;
+      --glass: rgba(255,255,255,0.08);
+      --container-width:1200px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color:#0b1720;
+      background:#f6f7fb;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      overflow-x:hidden;
+    }
+    a{color:inherit; text-decoration:none}
+    img{max-width:100%; display:block}
+
+    /* ---------- Page layout ---------- */
+    .wrap { max-width: var(--container-width); margin:0 auto; padding:0 22px; }
+
+    /* ---------- Nav (transparent) ---------- */
+    header.topbar{
+      position:fixed;
+      top:0; left:0; right:0;
+      z-index:60;
+      display:flex;
+      justify-content:center;
+      pointer-events:none;
+    }
+    header .bar {
+      pointer-events:auto;
+      width:100%;
+      max-width:var(--container-width);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border-radius:10px;
+      margin:18px;
+      backdrop-filter: blur(8px) saturate(120%);
+      box-shadow: 0 6px 24px rgba(6,12,34,0.12);
+      transition:transform .35s ease, background .35s ease, box-shadow .35s ease;
+    }
+    header.scrolled .bar { padding:10px 18px; transform:translateY(-2px); box-shadow:0 8px 30px rgba(6,12,34,0.14); }
+
+    .brand {
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .brand .logo {
+      width:44px; height:44px; border-radius:8px;
+      display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(135deg,var(--accent),var(--accent-2));
+      color:white; font-weight:700;
+      box-shadow: 0 6px 18px rgba(241, 231, 179, 0.402);
+      font-size:18px;
+      overflow: hidden;
+    }
+    .brand h1 { font-size:1.05rem; margin:0; font-weight:600; color:#fff; letter-spacing:0.2px; text-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+    .brand small { display:block; font-weight:500; font-size:12px; color: rgba(255,255,255,0.9); margin-top:2px; opacity:0.95; }
+
+    nav.topnav {
+      display:flex; align-items:center; gap:12px;
+    }
+    nav.topnav a {
+      color:#fff; padding:8px 12px; border-radius:8px; font-weight:600; font-size:0.95rem; opacity:0.95;
+      transition:all .22s ease;
+    }
+    nav.topnav a:hover { transform:translateY(-3px); opacity:1; }
+    nav.topnav .btn-login { 
+      background:var(--gold); color:#000; 
+      padding: 10px 50px; 
+      border-radius:25px 5px;  
+      box-shadow: 0 6px 18px rgba(255,206,0,0.25); 
+    }
+    nav.topnav .btn-register { 
+      background:var(--green); 
+      color:#000; 
+      padding:8px 10px; 
+      border-radius:25px 5px; 
+    }
+
+    /* Language Switcher */
+    .lang-switcher {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .lang-switcher:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+    .lang-flag {
+      width: 20px;
+      height: 15px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .lang-text {
+      color: white;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    /* ---------- Hero slideshow ---------- */
+    .hero {
+      position:relative;
+      height:100vh;
+      min-height:640px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      overflow:hidden;
+    }
+    .slides {
+      position:fixed; inset:0; z-index:0;
+    }
+    .slide {
+      position:absolute; inset:0; background-size:cover; background-position:center center;
+      opacity:0; transform:scale(1.02); transition:opacity 1.2s ease, transform 8s ease;
+      will-change:opacity, transform;
+    }
+    .slide.active { opacity:1; transform:scale(1); }
+
+    .hero::after {
+      content:"";
+      position:absolute; inset:0; z-index:1;
+      background: linear-gradient(180deg, rgba(2,6,23,0.40) 0%, rgba(2,6,23,0.20) 35%, rgba(2,6,23,0.55) 100%);
+      pointer-events:none;
+    }
+
+    .hero-inner {
+      position:relative; z-index:2; max-width:980px; padding:28px;
+      color:hsla(184, 88%, 59%, 0.828);
+      display:flex; flex-direction:column; align-items:center; gap:18px;
+    }
+    .hero-title {
+      font-size: clamp(28px, 5.6vw, 54px);
+      text-shadow: 10px 20px 40px rgba(29, 245, 245, 0.3);
+      font-weight:700;
+      line-height:1.02;
+      letter-spacing:-0.6px;
+      margin:0;
+    }
+    .hero-sub {
+      max-width:720px;
+      font-size: clamp(14px, 1.8vw, 18px);
+      color: rgba(181, 245, 196, 0.94);
+      margin:0;
+      font-weight:500;
+      text-shadow: 0 8px 18px rgba(0,0,0,0.35);
+    }
+    .hero-cta {
+      margin-top:8px;
+      display:flex; gap:12px; align-items:center; justify-content:center; margin-bottom:6px;
+    }
+    .cta-primary {
+      background:rgba(231, 202, 36, 0.958); 
+      color:#000; 
+      padding: 10px 100px; 
+      border-radius:20px 10px;  
+      box-shadow: 5px 5px rgba(60, 59, 54, 0.318);  
+      border: none; 
+      cursor:pointer;
+      font-weight: 600;
+    }
+
+    .hero-scroll {
+      position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:3; color:rgba(255,255,255,0.95);
+      font-size:13px; display:flex; align-items:center; gap:10px; opacity:0.95;
+    }
+    .mouse {
+      width:20px; height:34px; border:2px solid rgba(255,255,255,0.9); border-radius:12px; display:inline-block;
+      position:relative;
+    }
+    .mouse .wheel { 
+      position:absolute; top:8px; left:50%; transform:translateX(-50%); width:4px; height:6px; border-radius:2px; background:rgba(255,255,255,0.9);
+      animation:wheel 1.6s infinite;
+    }
+    @keyframes wheel {
+      0%{opacity:1; transform:translate(-50%,0)}
+      50%{opacity:0.2; transform:translate(-50%,6px)}
+      100%{opacity:1; transform:translate(-50%,0)}
+    }
+
+    /* ---------- Below-hero content ---------- */
+    main { position:relative; z-index:10; margin-top:-40px; }
+    .panel {
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 18px 50px rgba(10,18,30,0.06);
+      margin: 0 auto;
+      max-width:var(--container-width);
+      padding:28px;
+      transform: translateY(0);
+    }
+    .notice-row { display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
+    .notice-left { flex:1 1 380px; }
+    .notice-right { flex:1 1 320px; display:flex; gap:12px; flex-direction:column; }
+
+    .notice-title { font-size:20px; font-weight:700; color:var(--accent-2); margin-bottom:8px; }
+    .notice-list { display:flex; flex-direction:column; gap:10px; }
+    .notice-item {
+      background: linear-gradient(90deg, rgba(0,87,164,0.06), rgba(0,87,164,0.02));
+      border-left:4px solid var(--accent);
+      padding:12px 14px; border-radius:8px; color:#0b1720; font-weight:600;
+    }
+
+    .features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-top:18px; }
+    .feature-card {
+      padding:22px; border-radius:12px; background:#fff; border:1px solid rgba(11,23,32,0.04);
+      box-shadow: 0 8px 28px rgba(10,18,30,0.04); text-align:left; transition:transform .28s ease, box-shadow .28s ease;
+      cursor: pointer;
+    }
+    .feature-card:hover { transform:translateY(-8px); box-shadow: 0 16px 40px rgba(10,18,30,0.08); }
+    .feature-card h4 { margin:0 0 8px 0; color:var(--accent-2); }
+    .feature-card p { margin:0; color:var(--muted); font-weight:500; }
+
+    footer.site { margin-top:36px; text-align:center; color:var(--muted); padding:28px 12px; font-size:14px; }
+
+    /* ---------- Popup Overlay ---------- */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(2, 6, 23, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      backdrop-filter: blur(6px);
+    }
+    
+    .popup-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .popup-container {
+      background: #fff;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 460px;
+      padding: 32px;
+      box-shadow: 0 24px 60px rgba(6, 12, 34, 0.25);
+      transform: translateY(20px);
+      transition: transform 0.4s ease;
+      position: relative;
+    }
+    
+    .popup-overlay.active .popup-container {
+      transform: translateY(0);
+    }
+    
+    .popup-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--muted);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s ease;
+    }
+    
+    .popup-close:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .popup-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    
+    .popup-header h2 {
+      color: var(--accent-2);
+      margin: 0 0 8px 0;
+      font-size: 24px;
+    }
+    
+    .popup-header p {
+      color: var(--muted);
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    .popup-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .form-group label {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--accent-2);
+    }
+    
+    .form-group input, .form-group select {
+      padding: 12px 14px;
+      border: 1px solid rgba(11, 23, 32, 0.15);
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 87, 164, 0.1);
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .form-row .form-group {
+      flex: 1;
+    }
+    
+    .login-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .remember input {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .forgot-password {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    
+    .popup-button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+      margin-top: 8px;
+    }
+    
+    .popup-button:hover {
+      background: var(--accent-2);
+      transform: translateY(-2px);
+    }
+    
+    .popup-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    
+    .popup-footer a {
+      color: var(--accent);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .terms {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    
+    .terms input {
+      margin-top: 4px;
+    }
+    
+    .terms a {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Bangla Language Styles */
+    body.bangla {
+      font-family: 'Hind Siliguri', 'Poppins', sans-serif;
+    }
+    body.bangla .hero-title,
+    body.bangla .hero-sub,
+    body.bangla .notice-title,
+    body.bangla .feature-card h4,
+    body.bangla .popup-header h2 {
+      font-family: 'Hind Siliguri', sans-serif;
+    }
+
+    @media (max-width: 980px){
+      header .bar { margin:12px; padding:12px 14px; }
+      .brand h1{ font-size:0.95rem }
+      .hero { min-height:560px }
+    }
+    @media (max-width:720px){
+      .brand h1{ display:none }
+      .bar{ padding:10px 12px; gap:10px }
+      nav.topnav a { padding:8px 10px; font-size:0.92rem }
+      .notice-row { flex-direction:column; }
+      .hero-sub{ font-size:15px }
+      .panel{ padding:18px }
+      .popup-container { padding: 24px; }
+      .form-row { flex-direction: column; gap: 18px; }
+      .lang-text { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV (transparent) -->
+  <header class="topbar" id="header">
+    <div class="bar wrap" role="navigation" aria-label="main navigation">
+      <div class="brand" aria-hidden="false">
+        <div class="logo" title="BAUET">
+          <img src="https://bauet.ac.bd/wp-content/uploads/2020/11/BAUET-Logo-250x244-1.png" alt="BAUET Logo" style="width:100%; height:100%; object-fit:contain;">
+        </div>
+        <div style="line-height:1;">
+          <h1 data-en="File Movement & Approval" data-bn="File Movement & Approval">File Movement & Approval</h1>
+          <small data-en="Online Approval System" data-bn="অনলাইন অনুমোদন ব্যবস্থা">Online Approval System</small>
+        </div>
+      </div>
+
+      <nav class="topnav" aria-label="main menu">
+        <div class="lang-switcher" id="langSwitcher">
+          <div class="lang-flag">
+            <img src="https://flagcdn.com/w40/gb.png" alt="English" style="width:100%; height:100%; object-fit:cover;">
+          </div>
+          <div class="lang-text">EN</div>
+        </div>
+        <a class="btn-login" href="#" id="loginBtn" data-en="Login" data-bn="লগইন">Login</a>
+        <a class="btn-register" href="#" id="registerBtn" data-en="Register" data-bn="নিবন্ধন">Register</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- LOGIN POPUP -->
+  <div class="popup-overlay" id="loginPopup">
+    <div class="popup-container">
+      <button class="popup-close" id="closeLogin">&times;</button>
+      
+      <div class="popup-header">
+        <h2 data-en="Login to Your Account" data-bn="আপনার অ্যাকাউন্টে লগইন করুন">Login to Your Account</h2>
+        <p data-en="Access your dashboard and manage files" data-bn="আপনার ড্যাশবোর্ড অ্যাক্সেস করুন এবং ফাইল পরিচালনা করুন">Access your dashboard and manage files</p>
+      </div>
+      
+      <form class="popup-form" id="loginForm">
+        <div class="form-group">
+          <label for="username" data-en="Username or Email" data-bn="ব্যবহারকারীর নাম বা ইমেইল">Username or Email</label>
+          <input type="text" id="username" name="username" placeholder="Enter your username or email" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password" data-en="Password" data-bn="পাসওয়ার্ড">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+        
+        <div class="login-options">
+          <div class="remember">
+            <input type="checkbox" id="remember">
+            <label for="remember" data-en="Remember me" data-bn="আমাকে মনে রাখুন">Remember me</label>
+          </div>
+          <a href="#" class="forgot-password" data-en="Forgot password?" data-bn="পাসওয়ার্ড ভুলে গেছেন?">Forgot password?</a>
+        </div>
+        
+        <button type="submit" class="popup-button" data-en="Login" data-bn="লগইন">Login</button>
+      </form>
+      
+      <div class="popup-footer">
+        <span data-en="Don't have an account?" data-bn="অ্যাকাউন্ট নেই?">Don't have an account?</span>
+        <a id="switchToRegister" data-en="Register here" data-bn="এখানে নিবন্ধন করুন">Register here</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTER POPUP -->
+  <div class="popup-overlay" id="registerPopup">
+    <div class="popup-container">
+      <button class="popup-close" id="closeRegister">&times;</button>
+      
+      <div class="popup-header">
+        <h2 data-en="Create an Account" data-bn="একটি অ্যাকাউন্ট তৈরি করুন">Create an Account</h2>
+        <p data-en="Join our file management system" data-bn="আমাদের ফাইল ব্যবস্থাপনা সিস্টেমে যোগ দিন">Join our file management system</p>
+      </div>
+      
+      <form class="popup-form" id="registerForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName" data-en="First Name" data-bn="নামের প্রথম অংশ">First Name</label>
+            <input type="text" id="firstName" name="firstName" placeholder="Enter your first name" required>
+          </div>
+          <div class="form-group">
+            <label for="lastName" data-en="Last Name" data-bn="নামের শেষাংশ">Last Name</label>
+            <input type="text" id="lastName" name="lastName" placeholder="Enter your last name" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="email" data-en="Email Address" data-bn="ইমেইল ঠিকানা">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="Enter your email address" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="userType" data-en="User Type" data-bn="ব্যবহারকারীর ধরন">User Type</label>
+          <select id="userType" name="userType" required>
+            <option value="" data-en="Select your role" data-bn="আপনার ভূমিকা নির্বাচন করুন">Select your role</option>
+            <option value="employee" data-en="Employee" data-bn="কর্মচারী">Employee</option>
+            <option value="officer" data-en="Officer" data-bn="অফিসার">Officer</option>
+            <option value="admin" data-en="Administrator" data-bn="প্রশাসক">Administrator</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="department" data-en="Department" data-bn="বিভাগ">Department</label>
+          <select id="department" name="department" required>
+            <option value="" data-en="Select your department" data-bn="আপনার বিভাগ নির্বাচন করুন">Select your department</option>
+            <option value="hr" data-en="Human Resources" data-bn="মানব সম্পদ">Human Resources</option>
+            <option value="finance" data-en="Finance" data-bn="অর্থ">Finance</option>
+            <option value="it" data-en="IT" data-bn="আইটি">IT</option>
+            <option value="operations" data-en="Operations" data-bn="অপারেশন">Operations</option>
+            <option value="marketing" data-en="Marketing" data-bn="বিপণন">Marketing</option>
+          </select>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="regPassword" data-en="Password" data-bn="পাসওয়ার্ড">Password</label>
+            <input type="password" id="regPassword" name="regPassword" placeholder="Create a password" required>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword" data-en="Confirm Password" data-bn="পাসওয়ার্ড নিশ্চিত করুন">Confirm Password</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+          </div>
+        </div>
+        
+        <div class="terms">
+          <input type="checkbox" id="agreeTerms" required>
+          <label for="agreeTerms" data-en="I agree to the Terms of Service and Privacy Policy" data-bn="আমি সেবার শর্তাবলী এবং গোপনীয়তা নীতি মেনে নিচ্ছি">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+        </div>
+        
+        <button type="submit" class="popup-button" data-en="Create Account" data-bn="অ্যাকাউন্ট তৈরি করুন">Create Account</button>
+      </form>
+      
+      <div class="popup-footer">
+        <span data-en="Already have an account?" data-bn="ইতিমধ্যে একটি অ্যাকাউন্ট আছে?">Already have an account?</span>
+        <a id="switchToLogin" data-en="Login here" data-bn="এখানে লগইন করুন">Login here</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO (slideshow) -->
+  <section class="hero" id="hero">
+    <div class="slides" id="slides">
+      <div class="slide active" style="background-image:url('https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3&s=3f8fbf7f3d3e8312fa7d0b2f28bdf2d6');"></div>
+      <div class="slide active" style="background-image:url('https://bauet.ac.bd/ice/galary/campus/bauet-campus-back-side-1/');"></div>
+      <div class="slide active" style="background-image:url('https://bauet.ac.bd/ice/wp-content/uploads/sites/9/2022/06/BAUET-Masjid-2-650x387.jpg');"></div>
+      <div class="slide active" style="background-image:url('https://bauet.ac.bd/ice/wp-content/uploads/sites/9/2022/06/20190821_182726-650x404.jpg');"></div>
+    </div>
+
+    <div class="hero-inner">
+      <h2 class="hero-title" data-en="File Movement & Approval System" data-bn="File Movement & Approval">File Movement & Approval System</h2>
+      <p class="hero-sub" data-en="Submit files to departments, follow multi-level officer approvals, receive updates — all in one secure online platform." data-bn="বিভাগে ফাইল জমা দিন, বহু-স্তরের কর্মকর্তা অনুমোদন অনুসরণ করুন, আপডেট পান — সবই একটি নিরাপদ অনলাইন প্ল্যাটফর্মে।">Submit files to departments, follow multi-level officer approvals, receive updates — all in one secure online platform.</p>
+
+      <div class="hero-cta">
+        <a class="cta-primary" href="#" id="heroLoginBtn" data-en="Login" data-bn="লগইন">Login</a>
+      </div>
+    </div>
+
+    <div class="hero-scroll" aria-hidden="true">
+      <div class="mouse" aria-hidden="true"><div class="wheel"></div></div>
+      <div style="opacity:.95" data-en="Scroll to explore" data-bn="স্ক্রল করে এক্সপ্লোর করুন">Scroll to explore</div>
+    </div>
+  </section>
+
+  <!-- MAIN PANEL -->
+  <main>
+    <section class="panel wrap" aria-labelledby="noticeHeading">
+      <div style="display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap">
+        <div class="notice-left" style="flex:1 1 560px">
+          <div id="noticeHeading" class="notice-title" data-en="🛎️ Notification Board" data-bn="🛎️ নোটিফিকেশন বোর্ড">🛎️ Notification Board</div>
+          <div class="notice-list" role="list" aria-label="site notices">
+            <div class="notice-item" role="listitem" data-en="📢 Server maintenance scheduled on August 3 — services may be limited during the window." data-bn="📢 আগস্ট ৩ তারিখ সার্ভার রক্ষণাবেক্ষণ নির্ধারিত — এই সময়ে পরিষেবা সীমিত হতে পারে।">📢 Server maintenance scheduled on August 3 — services may be limited during the window.</div>
+            <div class="notice-item" role="listitem" data-en="🕘 New officer roles have been added — check role assignments in your dashboard." data-bn="🕘 নতুন অফিসার ভূমিকা যোগ করা হয়েছে — আপনার ড্যাশবোর্ডে ভূমিকা বরাদ্দ পরীক্ষা করুন।">🕘 New officer roles have been added — check role assignments in your dashboard.</div>
+            <div class="notice-item" role="listitem" data-en="📎 Bulk Approve feature released for Admin & Officers." data-bn="📎 অ্যাডমিন ও অফিসারদের জন্য বাল্ক অ্যাপ্রুভ ফিচার প্রকাশিত।">📎 Bulk Approve feature released for Admin & Officers.</div>
+          </div>
+        </div>
+
+        <div style="padding:16px; border-radius:10px; background:#fff; border:1px solid rgba(11,23,32,0.04)">
+          <div style="font-weight:700; color:var(--accent-2); margin-bottom:6px" data-en="Contact" data-bn="যোগাযোগ">Contact</div>
+          <div style="color:var(--muted); font-weight:600; font-size:14px">helpdesk@yourdomain.com<br/>+8801XXXXXXXXX</div>
+        </div>
+      </div>
+
+      <!-- Workflow Section -->
+      <div style="margin-top:28px;">
+        <div style="font-weight:700; color:var(--accent-2); margin-bottom:16px; font-size:22px; text-align:center;">
+          <u data-en="Workflow" data-bn="কর্মপ্রবাহ">Workflow</u>
+        </div>
+        <div class="features-grid" role="list">
+          <div class="feature-card" role="listitem">
+            <div style="font-size:32px; margin-bottom:12px;">🚀</div>
+            <h4 data-en="One-Click Submission" data-bn="এক-ক্লিক জমাদান">One-Click Submission</h4>
+            <p data-en="Drag-and-drop interface with automated formatting and smart template suggestions." data-bn="স্বয়ংক্রিয় ফরম্যাটিং এবং স্মার্ট টেমপ্লেট সুপারিশ সহ ড্রাগ-এন্ড-ড্রপ ইন্টারফেস।">Drag-and-drop interface with automated formatting and smart template suggestions.</p>
+          </div>
+          <div class="feature-card" role="listitem">
+            <div style="font-size:32px; margin-bottom:12px;">📍</div>
+            <h4 data-en="Live Position Tracking" data-bn="লাইভ অবস্থান ট্র্যাকিং">Live Position Tracking</h4>
+            <p data-en="Real-time location tracking with estimated completion times and milestone notifications." data-bn="আনুমানিক সমাপ্তি সময় এবং মাইলফলক বিজ্ঞপ্তি সহ রিয়েল-টাইম অবস্থান ট্র্যাকিং।">Real-time location tracking with estimated completion times and milestone notifications.</p>
+          </div>
+          <div class="feature-card" role="listitem">
+            <div style="font-size:32px; margin-bottom:12px;">💬</div>
+            <h4 data-en="Seamless Collaboration" data-bn="নিরবিচ্ছিন্ন সহযোগিতা">Seamless Collaboration</h4>
+            <p data-en="Integrated messaging, version control, and multi-user editing in a unified workspace." data-bn="একীভূত কর্মক্ষেত্রে সংহত বার্তাপ্রেরণ, সংস্করণ নিয়ন্ত্রণ এবং বহু-ব্যবহারকারী সম্পাদনা।">Integrated messaging, version control, and multi-user editing in a unified workspace.</p>
+          </div>
+          <div class="feature-card" role="listitem">
+            <div style="font-size:32px; margin-bottom:12px;">📊</div>
+            <h4 data-en="Performance Analytics" data-bn="কর্মক্ষমতা বিশ্লেষণ">Performance Analytics</h4>
+            <p data-en="Custom dashboards with process optimization insights and department performance metrics." data-bn="প্রক্রিয়া অপ্টিমাইজেশনের অন্তর্দৃষ্টি এবং বিভাগের কর্মক্ষমতা মেট্রিক্স সহ কাস্টম ড্যাশবোর্ড।">Custom dashboards with process optimization insights and department performance metrics.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question Form -->
+      <div style="padding:20px; border-radius:12px; background:#fff; border:1px solid rgba(11,23,32,0.08); margin-top: 20px;">
+        <div style="background:rgba(0,87,164,0.02); padding:16px; border-radius:8px; border:1px dashed rgba(0,87,164,0.2);">
+          <div style="font-weight:600; color:var(--accent-2); margin-bottom:10px;" data-en="Have a Question?" data-bn="কোন প্রশ্ন আছে?">Have a Question?</div>
+          
+          <form id="supportForm" style="display:flex; flex-direction:column; gap:12px;">
+            <input type="email" placeholder="Your email address" required
+                   style="padding:10px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:13px; font-family:inherit;">
+            
+            <select style="padding:10px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:13px; font-family:inherit; background:white;">
+              <option value="" data-en="Select category" data-bn="বিভাগ নির্বাচন করুন">Select category</option>
+              <option value="technical" data-en="Technical Issue" data-bn="প্রযুক্তিগত সমস্যা">Technical Issue</option>
+              <option value="account" data-en="Account Problem" data-bn="অ্যাকাউন্ট সমস্যা">Account Problem</option>
+              <option value="feature" data-en="Feature Request" data-bn="ফিচার অনুরোধ">Feature Request</option>
+              <option value="other" data-en="Other" data-bn="অন্যান্য">Other</option>
+            </select>
+            
+            <textarea placeholder="Describe your question or issue..." rows="3" required
+                      style="padding:10px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
+            
+            <button type="submit" 
+                    style="background:var(--accent); color:white; border:none; padding:10px 16px; border-radius:6px; font-weight:600; font-size:13px; cursor:pointer; transition:background 0.2s ease;"
+                    data-en="Submit Question" data-bn="প্রশ্ন জমা দিন">
+              Submit Question
+            </button>
+          </form>
+          
+          <div id="formMessage" style="display:none; font-size:12px; color:var(--accent); margin-top:8px; text-align:center;"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site">
+      <span data-en="&copy; 2025 File Movement & Approval System — Developed by THUNDER-BOND" data-bn="&copy; ২০২৫ File Movement & Approval — ডেভেলপ করেছেন THUNDER-BOND">&copy; 2025 File Movement & Approval System — Developed by THUNDER-BOND</span>
+    </footer>
+  </main>
+
+  <script>
+    (function(){
+      // Language management
+      let currentLang = 'en';
+      const langSwitcher = document.getElementById('langSwitcher');
+      const flagImg = langSwitcher.querySelector('img');
+      const langText = langSwitcher.querySelector('.lang-text');
+
+      function switchLanguage() {
+        if (currentLang === 'en') {
+          currentLang = 'bn';
+          flagImg.src = 'https://flagcdn.com/w40/bd.png';
+          flagImg.alt = 'Bangla';
+          langText.textContent = 'বাংলা';
+          document.body.classList.add('bangla');
+        } else {
+          currentLang = 'en';
+          flagImg.src = 'https://flagcdn.com/w40/gb.png';
+          flagImg.alt = 'English';
+          langText.textContent = 'EN';
+          document.body.classList.remove('bangla');
+        }
+        updateTextContent();
+      }
+
+      function updateTextContent() {
+        document.querySelectorAll('[data-en]').forEach(element => {
+          if (currentLang === 'en') {
+            element.textContent = element.getAttribute('data-en');
+          } else {
+            element.textContent = element.getAttribute('data-bn');
+          }
+        });
+
+        // Update placeholders and options
+        document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(element => {
+          if (currentLang === 'bn') {
+            const bnText = element.getAttribute('data-bn-placeholder');
+            if (bnText) element.placeholder = bnText;
+          } else {
+            const enText = element.getAttribute('data-en-placeholder');
+            if (enText) element.placeholder = enText;
+          }
+        });
+
+        document.querySelectorAll('select option').forEach(option => {
+          if (currentLang === 'bn') {
+            const bnText = option.getAttribute('data-bn');
+            if (bnText) option.textContent = bnText;
+          } else {
+            const enText = option.getAttribute('data-en');
+            if (enText) option.textContent = enText;
+          }
+        });
+      }
+
+      langSwitcher.addEventListener('click', switchLanguage);
+
+      // Fix slideshow - only one slide should have 'active' class
+      const slides = document.querySelectorAll('.slide');
+      let idx = 0;
+      const delay = 6000;
+      
+      function goTo(i){
+        slides.forEach((s, k) => s.classList.toggle('active', k===i));
+      }
+      
+      function next(){
+        idx = (idx + 1) % slides.length;
+        goTo(idx);
+      }
+      
+      let timer = setInterval(next, delay);
+
+      // Pause on hover
+      const hero = document.getElementById('hero');
+      hero.addEventListener('mouseenter', ()=> clearInterval(timer));
+      hero.addEventListener('mouseleave', ()=> timer = setInterval(next, delay));
+
+      // Header scroll effect
+      const header = document.getElementById('header');
+      function onScroll(){
+        const y = window.scrollY || window.pageYOffset;
+        if (y > 40) header.classList.add('scrolled'); 
+        else header.classList.remove('scrolled');
+      }
+      window.addEventListener('scroll', onScroll, {passive:true});
+      onScroll();
+
+      // Popup functionality
+      const loginPopup = document.getElementById('loginPopup');
+      const registerPopup = document.getElementById('registerPopup');
+      const loginBtn = document.getElementById('loginBtn');
+      const registerBtn = document.getElementById('registerBtn');
+      const heroLoginBtn = document.getElementById('heroLoginBtn');
+      const closeLogin = document.getElementById('closeLogin');
+      const closeRegister = document.getElementById('closeRegister');
+      const switchToRegister = document.getElementById('switchToRegister');
+      const switchToLogin = document.getElementById('switchToLogin');
+
+      function openLoginPopup() {
+        closeAllPopups();
+        loginPopup.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function openRegisterPopup() {
+        closeAllPopups();
+        registerPopup.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeAllPopups() {
+        loginPopup.classList.remove('active');
+        registerPopup.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      // Event listeners
+      loginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openLoginPopup();
+      });
+
+      registerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openRegisterPopup();
+      });
+
+      heroLoginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openLoginPopup();
+      });
+
+      closeLogin.addEventListener('click', closeAllPopups);
+      closeRegister.addEventListener('click', closeAllPopups);
+      
+      loginPopup.addEventListener('click', (e) => {
+        if (e.target === loginPopup) closeAllPopups();
+      });
+      
+      registerPopup.addEventListener('click', (e) => {
+        if (e.target === registerPopup) closeAllPopups();
+      });
+
+      switchToRegister.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeAllPopups();
+        openRegisterPopup();
+      });
+
+      switchToLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeAllPopups();
+        openLoginPopup();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAllPopups();
+      });
+
+      // Form submissions
+      document.getElementById('loginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        alert(currentLang === 'en' ? 'Login functionality would be implemented here.' : 'লগইন কার্যকারিতা এখানে বাস্তবায়িত হবে।');
+        closeAllPopups();
+      });
+
+      document.getElementById('registerForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        alert(currentLang === 'en' ? 'Registration functionality would be implemented here.' : 'নিবন্ধন কার্যকারিতা এখানে বাস্তবায়িত হবে।');
+        closeAllPopups();
+      });
+
+      document.getElementById('supportForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const messageDiv = document.getElementById('formMessage');
+        messageDiv.textContent = currentLang === 'en' 
+          ? 'Thank you! Your question has been sent to our support team.' 
+          : 'ধন্যবাদ! আপনার প্রশ্ন আমাদের সহায়তা দলকে পাঠানো হয়েছে।';
+        messageDiv.style.display = 'block';
+        e.target.reset();
+        
+        setTimeout(() => {
+          messageDiv.style.display = 'none';
+        }, 5000);
+      });
+    })();
+  </script>
+</body>
+</html>

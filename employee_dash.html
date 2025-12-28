@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>File Movement & Approval System</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ---------- Reset & base ---------- */
+    :root{
+      --accent:#0057a4;      /* main brand color (blue) */
+      --accent-2:#003b70;   /* darker */
+      --muted:#6b7280;
+      --gold:#ffce00;
+      --glass: rgba(255,255,255,0.08);
+      --container-width:1200px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color:#0b1720;
+      background:#f6f7fb;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      overflow-x:hidden;
+    }
+    a{color:inherit; text-decoration:none}
+    img{max-width:100%; display:block}
+
+    /* ---------- Page layout ---------- */
+    .wrap { max-width: var(--container-width); margin:0 auto; padding:0 22px; }
+
+    /* ---------- Nav (transparent) ---------- */
+    header.topbar{
+      position:fixed;
+      top:0; left:0; right:0;
+      z-index:60;
+      display:flex;
+      justify-content:center;
+      pointer-events:none; /* inner container handles pointer */
+    }
+    header .bar {
+      pointer-events:auto;
+      width:100%;
+      max-width:var(--container-width);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border-radius:10px;
+      margin:18px;
+      backdrop-filter: blur(8px) saturate(120%);
+      box-shadow: 0 6px 24px rgba(6,12,34,0.12);
+      transition:transform .35s ease, background .35s ease, box-shadow .35s ease;
+    }
+    /* shrink effect on scroll */
+    header.scrolled .bar { padding:10px 18px; transform:translateY(-2px); box-shadow:0 8px 30px rgba(6,12,34,0.14); }
+
+    .brand {
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .brand .logo {
+      width:44px; height:44px; border-radius:8px;
+      display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(135deg,var(--accent),var(--accent-2));
+      color:white; font-weight:700;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+      font-size:18px;
+    }
+    .brand h1 { font-size:1.05rem; margin:0; font-weight:600; color:#fff; letter-spacing:0.2px; text-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+    .brand small { display:block; font-weight:500; font-size:12px; color: rgba(255,255,255,0.9); margin-top:2px; opacity:0.95; }
+
+    nav.topnav {
+      display:flex; align-items:center; gap:12px;
+    }
+    nav.topnav a {
+      color:#fff; padding:8px 12px; border-radius:8px; font-weight:600; font-size:0.95rem; opacity:0.95;
+      transition:all .22s ease;
+    }
+    nav.topnav a:hover { transform:translateY(-3px); opacity:1; }
+    nav.topnav .btn-login { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.06); }
+    nav.topnav .btn-register { background:var(--gold); color:#000; padding:8px 14px; border-radius:999px; }
+
+    /* language select in nav */
+    .lang-select {
+      background:transparent; border:0; color:#fff; font-weight:600; padding:6px 8px; border-radius:6px;
+    }
+
+    /* ---------- Hero slideshow ---------- */
+    .hero {
+      position:relative;
+      height:100vh;
+      min-height:640px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      overflow:hidden;
+    }
+    /* slides container */
+    .slides {
+      position:absolute; inset:0; z-index:0;
+    }
+    .slide {
+      position:absolute; inset:0; background-size:cover; background-position:center center;
+      opacity:0; transform:scale(1.02); transition:opacity 1.2s ease, transform 8s ease;
+      will-change:opacity, transform;
+    }
+    .slide.active { opacity:1; transform:scale(1); }
+
+    /* gradient & dim overlay for readable text */
+    .hero::after {
+      content:"";
+      position:absolute; inset:0; z-index:1;
+      background: linear-gradient(180deg, rgba(2,6,23,0.40) 0%, rgba(2,6,23,0.20) 35%, rgba(2,6,23,0.55) 100%);
+      pointer-events:none;
+    }
+
+    .hero-inner {
+      position:relative; z-index:2; max-width:980px; padding:28px;
+      color:#fff;
+      display:flex; flex-direction:column; align-items:center; gap:18px;
+    }
+    .hero-title {
+      font-size: clamp(28px, 5.6vw, 54px);
+      font-weight:700;
+      line-height:1.02;
+      letter-spacing:-0.6px;
+      margin:0;
+      text-shadow: 0 12px 30px rgba(0,0,0,0.45);
+    }
+    .hero-sub {
+      max-width:720px;
+      font-size: clamp(14px, 1.8vw, 18px);
+      color: rgba(255,255,255,0.95);
+      margin:0;
+      font-weight:500;
+      text-shadow: 0 8px 18px rgba(0,0,0,0.35);
+    }
+    .hero-cta {
+      margin-top:8px;
+      display:flex; gap:12px; align-items:center; justify-content:center; margin-bottom:6px;
+    }
+    .cta-primary {
+      background:var(--gold); color:#000; padding:14px 22px; border-radius:999px; font-weight:700;
+      box-shadow: 0 10px 28px rgba(255,206,0,0.14); border: none; cursor:pointer;
+    }
+    .cta-ghost {
+      background:transparent; border:1px solid rgba(255,255,255,0.18); color:#fff; padding:12px 18px; border-radius:8px;
+    }
+
+    /* small hero hint (scroll) */
+    .hero-scroll {
+      position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:3; color:rgba(255,255,255,0.95);
+      font-size:13px; display:flex; align-items:center; gap:10px; opacity:0.95;
+    }
+    .mouse {
+      width:20px; height:34px; border:2px solid rgba(255,255,255,0.9); border-radius:12px; display:inline-block;
+      position:relative;
+    }
+    .mouse .wheel { position:absolute; top:8px; left:50%; transform:translateX(-50%); width:4px; height:6px; border-radius:2px; background:rgba(255,255,255,0.9);
+      animation:wheel 1.6s infinite;
+    }
+    @keyframes wheel {
+      0%{opacity:1; transform:translate(-50%,0)}
+      50%{opacity:0.2; transform:translate(-50%,6px)}
+      100%{opacity:1; transform:translate(-50%,0)}
+    }
+
+    /* ---------- Below-hero content ---------- */
+    main { position:relative; z-index:10; margin-top:-40px; } /* lifts content into hero bottom */
+    .panel {
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 18px 50px rgba(10,18,30,0.06);
+      margin: 0 auto;
+      max-width:var(--container-width);
+      padding:28px;
+      transform: translateY(0);
+    }
+    .notice-row { display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
+    .notice-left { flex:1 1 380px; }
+    .notice-right { flex:1 1 320px; display:flex; gap:12px; flex-direction:column; }
+
+    .notice-title { font-size:20px; font-weight:700; color:var(--accent-2); margin-bottom:8px; }
+    .notice-list { display:flex; flex-direction:column; gap:10px; }
+    .notice-item {
+      background: linear-gradient(90deg, rgba(0,87,164,0.06), rgba(0,87,164,0.02));
+      border-left:4px solid var(--accent);
+      padding:12px 14px; border-radius:8px; color:#0b1720; font-weight:600;
+    }
+
+    /* features / cards */
+    .features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-top:18px; }
+    .feature-card {
+      padding:22px; border-radius:12px; background:#fff; border:1px solid rgba(11,23,32,0.04);
+      box-shadow: 0 8px 28px rgba(10,18,30,0.04); text-align:left; transition:transform .28s ease, box-shadow .28s ease;
+    }
+    .feature-card:hover { transform:translateY(-8px); box-shadow: 0 16px 40px rgba(10,18,30,0.08); }
+    .feature-card h4 { margin:0 0 8px 0; color:var(--accent-2); }
+    .feature-card p { margin:0; color:var(--muted); font-weight:500; }
+
+    /* small footer */
+    footer.site { margin-top:36px; text-align:center; color:var(--muted); padding:28px 12px; font-size:14px; }
+
+    /* ---------- responsive ---------- */
+    @media (max-width: 980px){
+      header .bar { margin:12px; padding:12px 14px; }
+      .brand h1{ font-size:0.95rem }
+      .hero { min-height:560px }
+    }
+    @media (max-width:720px){
+      .brand h1{ display:none } /* hide long title on small */
+      .bar{ padding:10px 12px; gap:10px }
+      nav.topnav a { padding:8px 10px; font-size:0.92rem }
+      .notice-row { flex-direction:column; }
+      .hero-sub{ font-size:15px }
+      .panel{ padding:18px }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV (transparent) -->
+  <header class="topbar" id="header">
+    <div class="bar wrap" role="navigation" aria-label="main navigation">
+      <div class="brand" aria-hidden="false">
+        <div class="logo" title="FAS">F</div>
+        <div style="line-height:1;">
+          <h1>File Movement & Approval</h1>
+          <small>Online Approval System</small>
+        </div>
+      </div>
+
+      <nav class="topnav" aria-label="main menu">
+        <a href="index.html">Home</a>
+        <a href="apply.html">Apply</a>
+        <a href="status.html">Status</a>
+        <a href="tracking.html">Tracking</a>
+        <a class="btn-login" href="login.html">Login</a>
+        <a class="btn-register" href="register.html">Register</a>
+       
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO (slideshow) -->
+  <section class="hero" id="hero">
+    <div class="slides" id="slides">
+      <!-- slides (license-free images used) -->
+      <div class="slide active" style="background-image:url('https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3&s=3f8fbf7f3d3e8312fa7d0b2f28bdf2d6');"></div>
+      <div class="slide" style="background-image:url('/boral.jpeg');"></div>
+      <div class="slide" style="background-image:url('/boral.jpeg');"></div>
+    </div>
+
+    <div class="hero-inner">
+      <h2 class="hero-title">File Movement & Approval System</h2>
+      <p class="hero-sub">Submit files to departments, follow multi-level officer approvals, receive updates — all in one secure online platform.</p>
+
+      <div class="hero-cta">
+        <a class="cta-primary" href="apply.html">Start Application</a>
+        <a class="cta-ghost" href="status.html">Check Status</a>
+      </div>
+    </div>
+
+    <div class="hero-scroll" aria-hidden="true">
+      <div class="mouse" aria-hidden="true"><div class="wheel"></div></div>
+      <div style="opacity:.95">Scroll to explore</div>
+    </div>
+  </section>
+
+  <!-- MAIN PANEL (lifts into hero bottom) -->
+  <main>
+    <section class="panel wrap" aria-labelledby="noticeHeading">
+      <div style="display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap">
+        <div class="notice-left" style="flex:1 1 560px">
+          <div id="noticeHeading" class="notice-title">🛎️ Notification Board</div>
+          <div class="notice-list" role="list" aria-label="site notices">
+            <div class="notice-item" role="listitem">📢 Server maintenance scheduled on August 3 — services may be limited during the window.</div>
+            <div class="notice-item" role="listitem">🕘 New officer roles have been added — check role assignments in your dashboard.</div>
+            <div class="notice-item" role="listitem">📎 Bulk Approve feature released for Admin & Officers.</div>
+          </div>
+        </div>
+
+        <div class="notice-right">
+          <div style="background:linear-gradient(90deg, rgba(0,87,164,0.06), rgba(0,87,164,0.02)); padding:16px; border-radius:10px;">
+            <div style="font-weight:700; color:var(--accent-2); margin-bottom:6px">Quick Links</div>
+            <div style="display:flex; gap:8px; flex-direction:column;">
+              <a href="apply.html" style="font-weight:600; color:var(--accent)">Apply for File</a>
+              <a href="status.html" style="font-weight:600; color:var(--accent)">Check Status</a>
+              <a href="tracking.html" style="font-weight:600; color:var(--accent)">Track by ID</a>
+            </div>
+          </div>
+
+          <div style="padding:16px; border-radius:10px; background:#fff; border:1px solid rgba(11,23,32,0.04)">
+            <div style="font-weight:700; color:var(--accent-2); margin-bottom:6px">Contact</div>
+            <div style="color:var(--muted); font-weight:600; font-size:14px">helpdesk@yourdomain.com<br/>+8801XXXXXXXXX</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- features -->
+      <div style="margin-top:20px;">
+        <div style="font-weight:700; color:var(--accent-2); margin-bottom:10px">Features</div>
+        <div class="features-grid" role="list">
+          <div class="feature-card" role="listitem" onclick="location.href='apply.html'">
+            <h4>Apply</h4>
+            <p>Submit a new file to your department with attachments and necessary metadata.</p>
+          </div>
+          <div class="feature-card" role="listitem" onclick="location.href='status.html'">
+            <h4>Check Status</h4>
+            <p>See which officer level your file is at and recent activity log entries.</p>
+          </div>
+          <div class="feature-card" role="listitem" onclick="location.href='tracking.html'">
+            <h4>Tracking</h4>
+            <p>Track file movement using your application ID and generate printable status reports.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <footer class="site">
+      &copy; 2025 File Movement & Approval System — Developed by THUNDER-BOND
+    </footer>
+  </main>
+
+  <!-- ---------- Scripts: slideshow + header shrink ---------- -->
+  <script>
+    (function(){
+      // slideshow logic
+      const slides = document.querySelectorAll('.slide');
+      let idx = 0;
+      const delay = 6000; // ms
+      function goTo(i){
+        slides.forEach((s, k) => s.classList.toggle('active', k===i));
+      }
+      function next(){
+        idx = (idx + 1) % slides.length;
+        goTo(idx);
+      }
+      let timer = setInterval(next, delay);
+
+      // Pause on hover (optional)
+      const hero = document.getElementById('hero');
+      hero.addEventListener('mouseenter', ()=> clearInterval(timer));
+      hero.addEventListener('mouseleave', ()=> timer = setInterval(next, delay));
+
+      // shrink header on scroll
+      const header = document.getElementById('header');
+      const bar = header.querySelector('.bar');
+      let lastScroll = 0;
+      function onScroll(){
+        const y = window.scrollY || window.pageYOffset;
+        if (y > 40) header.classList.add('scrolled'); else header.classList.remove('scrolled');
+        lastScroll = y;
+      }
+      window.addEventListener('scroll', onScroll, {passive:true});
+      onScroll();
+
+      // smooth scroll for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach(a=>{
+        a.addEventListener('click', e=>{
+          const target = document.querySelector(a.getAttribute('href'));
+          if(target){ e.preventDefault(); target.scrollIntoView({behavior:'smooth'}); }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
