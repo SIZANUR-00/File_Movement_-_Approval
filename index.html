@@ -620,12 +620,12 @@
       <form class="popup-form" id="loginForm">
         <div class="form-group">
           <label for="username">Username or Email</label>
-          <input type="text" id="username" name="username" placeholder="Enter your username or email" required>
+          <input  type="email" id="login_email" placeholder="Enter your email" required>
         </div>
         
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          <input type="password" id="login_password" placeholder="Enter your password" required>
         </div>
         
         <div class="login-options">
@@ -673,26 +673,41 @@
           <input type="email" id="email" name="email" placeholder="Enter your email address" required>
         </div>
         
+        <!-- USER TYPE -->
         <div class="form-group">
-          <label for="userType">User Type</label>
-          <select id="userType" name="userType" required>
-            <option value="">Select your role</option>
-            <option value="employee">Employee</option>
-            <option value="officer">Officer</option>
-            <option value="admin">Administrator</option>
-          </select>
+        <label for="userType">User Type</label>
+        <select id="userType" name="userType" required>
+        <option value="">Select your role</option>
+        <option value="employee">Employee</option>
+        <option value="officer">Officer</option>
+        <option value="admin">Administrator</option>
+        </select>
         </div>
-        
-        <div class="form-group">
-          <label for="department">Department</label>
-          <select id="department" name="department" required>
-            <option value="">Select your department</option>
-            <option value="hr">Human Resources</option>
-            <option value="finance">Finance</option>
-            <option value="it">IT</option>
-            <option value="operations">Operations</option>
-            <option value="marketing">Marketing</option>
-          </select>
+
+        <!-- Officer Department (ONLY for officer) -->
+        <div class="form-group" id="officerDepartmentGroup" style="display:none;">
+        <label for="department">Department</label>
+        <select id="department" name="department">
+        <option value="">Select department</option>
+        <option value="register">Register</option>
+        <option value="provost">Provost</option>
+        <option value="asst_provost">Asst. Provost</option>
+        <option value="house_tutor">House Tutor</option>
+        </select>
+        </div>
+
+        <!-- Floor Selection (ONLY house tutor) -->
+        <div class="form-group" id="floorGroup" style="display:none;">
+        <label for="floor">Floor</label>
+        <select id="floor" name="floor">
+        <option value="">Select Floor</option>
+        <option value="1">Floor 1</option>
+        <option value="2">Floor 2</option>
+        <option value="3">Floor 3</option>
+        <option value="4">Floor 4</option>
+        <option value="5">Floor 5</option>
+        <option value="6">Floor 6</option>
+        </select>
         </div>
         
         <div class="form-row">
@@ -752,13 +767,15 @@
     <section class="panel wrap" aria-labelledby="noticeHeading">
       <div style="display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap">
         <div class="notice-left" style="flex:1 1 560px">
-          <div id="noticeHeading" class="notice-title">🛎️ Notification Board</div>
-          <div class="notice-list" role="list" aria-label="site notices">
-            <div class="notice-item" role="listitem">📢 Server maintenance scheduled on August 3 — services may be limited during the window.</div>
-            <div class="notice-item" role="listitem">🕘 New officer roles have been added — check role assignments in your dashboard.</div>
-            <div class="notice-item" role="listitem">📎 Bulk Approve feature released for Admin & Officers.</div>
-          </div>
-        </div>
+
+        <!-- Notices -->
+
+          <section>
+            <div>
+          <h2>Latest Notices</h2>
+           <div id="noticeList"></div>
+           </div>
+        </section>
 
         <div style="padding:16px; border-radius:10px; background:#fff; border:1px solid rgba(11,23,32,0.04)">
           <div style="font-weight:700; color:var(--accent-2); margin-bottom:6px">Contact</div>
@@ -827,7 +844,7 @@
     </section>
 
     <footer class="site">
-      <span>&copy; 2025 File Movement & Approval System — Developed by THUNDER-BOND</span>
+      <span>&copy; 2026 File Movement & Approval System — Developed by THUNDER-BOND</span>
     </footer>
   </main>
 
@@ -938,17 +955,14 @@
 
       // Form submissions
       document.getElementById('loginForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        alert('Login functionality would be implemented here.');
-        closeAllPopups();
+      e.preventDefault();
+      login();   // auth.js login function
       });
 
-      document.getElementById('registerForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        alert('Registration functionality would be implemented here.');
-        closeAllPopups();
-      });
-
+    document.getElementById('registerForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    signup();   // auth.js function call
+    });
       document.getElementById('supportForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const messageDiv = document.getElementById('formMessage');
@@ -975,7 +989,45 @@
           topnav.classList.remove('active');
         }
       });
+      /* ==========================
+      ROLE BASED FIELD CONTROL
+    ========================== */
+
+    const userType = document.getElementById("userType");
+    const officerDept = document.getElementById("officerDepartmentGroup");
+    const department = document.getElementById("department");
+    const floorGroup = document.getElementById("floorGroup");
+
+    userType.addEventListener("change", () => {
+
+      // show department only for officer
+      if (userType.value === "officer") {
+        officerDept.style.display = "flex";
+      } else {
+        officerDept.style.display = "none";
+        floorGroup.style.display = "none";
+        department.value = "";
+      }
+
+    });
+
+    department.addEventListener("change", () => {
+
+      // show floor only for house tutor
+      if (department.value === "house_tutor") {
+        floorGroup.style.display = "flex";
+      } else {
+        floorGroup.style.display = "none";
+      }
+
+    });
     })();
   </script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/notification.js"></script>
+  <script type="module" src="js/testConnection.js"></script>
+  <script type="module" src="./js/home_notice.js"></script>
+  <script type="module" src="./js/post_notice.js"></script>
+ 
 </body>
 </html>

@@ -836,7 +836,36 @@
           messageDiv.style.display = 'none';
         }, 5000);
       });
+
+      const userType = document.getElementById("userType");
+const officerDept = document.getElementById("officerDepartmentGroup");
+const department = document.getElementById("department");
+const floorGroup = document.getElementById("floorGroup");
+
+userType.addEventListener("change", () => {
+
+  if (userType.value === "officer") {
+    officerDept.style.display = "flex";
+  } else {
+    officerDept.style.display = "none";
+    floorGroup.style.display = "none";
+    department.value = "";
+  }
+
+});
+
+department.addEventListener("change", () => {
+
+  if (department.value === "house_tutor") {
+    floorGroup.style.display = "flex";
+  } else {
+    floorGroup.style.display = "none";
+  }
+
+});
     })();
   </script>
+  <script type="module" src="js/auth.js"></script>
+<script type="module" src="js/testConnection.js"></script>
 </body>
 </html>
